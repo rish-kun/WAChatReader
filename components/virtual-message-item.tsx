@@ -13,7 +13,7 @@ interface VirtualMessageItemProps {
 }
 
 // Match with the value in virtual-chat-viewer for consistency
-// Use a larger height to prevent overlapping messages
+// Use a larger height to prevent overlapping messages with longer content
 const MESSAGE_HEIGHT = 120
 
 export function VirtualMessageItem({
@@ -93,7 +93,7 @@ export function VirtualMessageItem({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }} // Remove the index-based delay
-      className="w-full px-4 py-3"
+      className="w-full px-4 py-3 box-border"
       style={
         isVirtual
           ? {
@@ -103,9 +103,12 @@ export function VirtualMessageItem({
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-start",
+              boxSizing: "border-box", // Ensure padding is included in height
+              overflowY: "hidden", // Prevent content from overflowing
             }
           : {
               minHeight: `${MESSAGE_HEIGHT}px`,
+              boxSizing: "border-box",
             }
       }
     >

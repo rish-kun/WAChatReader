@@ -40,7 +40,7 @@ export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: V
     }
   }, [messages, searchQuery])
 
-  // Handle scroll events for virtual scrolling
+  // Handle scroll events for virtual scrolling with improved performance
   const handleScroll = useCallback(() => {
     const container = containerRef.current
     if (!container) return
@@ -52,16 +52,29 @@ export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: V
 
     if (searchQuery) return // Don't update visible range during search
 
-    const newStart = Math.floor(scrollTop / MESSAGE_HEIGHT)
-    const newEnd = Math.min(newStart + Math.ceil(containerHeight / MESSAGE_HEIGHT) + 20, filteredMessages.length)
+    // Calculate how many messages can fit in the viewport
+    const visibleCount = Math.ceil(containerHeight / MESSAGE_HEIGHT)
+    
+    // Calculate the first visible message index
+    const firstVisibleIndex = Math.floor(scrollTop / MESSAGE_HEIGHT)
+    
+    // Calculate start and end with buffer zones for smoother scrolling
+    const newStart = Math.max(0, firstVisibleIndex - BUFFER_SIZE)
+    const newEnd = Math.min(firstVisibleIndex + visibleCount + BUFFER_SIZE, filteredMessages.length)
 
-    if (newStart !== visibleRange.start || newEnd !== visibleRange.end) {
+    // Only update if range has changed significantly to avoid frequent rerenders
+    if (
+      Math.abs(newStart - visibleRange.start) > Math.floor(BUFFER_SIZE / 2) || 
+      Math.abs(newEnd - visibleRange.end) > Math.floor(BUFFER_SIZE / 2) ||
+      newStart === 0 || 
+      newEnd === filteredMessages.length
+    ) {
       setVisibleRange({
-        start: Math.max(0, newStart - 10),
+        start: newStart,
         end: newEnd,
       })
     }
-  }, [visibleRange, filteredMessages.length, searchQuery])
+  }, [visibleRange, filteredMessages.length, searchQuery, BUFFER_SIZE])
 
   useEffect(() => {
     const container = containerRef.current
@@ -73,11 +86,22 @@ export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: V
 
   // Reset visible range when messages change
   useEffect(() => {
-    setVisibleRange({ start: 0, end: Math.min(CHUNK_SIZE, filteredMessages.length) })
+    // Calculate appropriate initial chunk size based on viewport height
     if (containerRef.current) {
+      const containerHeight = containerRef.current.clientHeight
+      const visibleCount = Math.ceil(containerHeight / MESSAGE_HEIGHT)
+      
+      // Set initial range with appropriate buffer for smoother experience
+      setVisibleRange({ 
+        start: 0, 
+        end: Math.min(visibleCount + BUFFER_SIZE * 2, filteredMessages.length)
+      })
       containerRef.current.scrollTop = 0
+    } else {
+      // Fallback if container ref not available yet
+      setVisibleRange({ start: 0, end: Math.min(CHUNK_SIZE, filteredMessages.length) })
     }
-  }, [filteredMessages])
+  }, [filteredMessages, MESSAGE_HEIGHT, BUFFER_SIZE])
 
   const scrollToTop = () => {
     if (containerRef.current) {
@@ -131,9 +155,17 @@ export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: V
     )
   }
 
+  // Calculate total scrollable height
   const totalHeight = filteredMessages.length * MESSAGE_HEIGHT
-  const visibleMessages = searchQuery ? filteredMessages : filteredMessages.slice(visibleRange.start, visibleRange.end)
+  
+  // For search results, show all messages; otherwise, only show messages in the visible range
+  const visibleMessages = searchQuery 
+    ? filteredMessages 
+    : filteredMessages.slice(visibleRange.start, visibleRange.end)
 
+  // Show stats about the currently visible messages for debugging
+  const percentageVisible = ((visibleRange.end - visibleRange.start) / filteredMessages.length * 100).toFixed(1)
+  
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
       {/* Search results info */}
@@ -144,16 +176,17 @@ export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: V
         </div>
       )}
 
-      {/* Virtual scrolling container */}
+      {/* Virtual scrolling container with improved performance */}
       <div ref={containerRef} className="flex-1 overflow-y-auto" style={{ height: "100%" }}>
         <div
           style={{
             height: searchQuery ? "auto" : `${totalHeight}px`,
             position: "relative",
-            paddingBottom: "16px" // Add padding at the bottom to improve spacing
+            paddingBottom: "24px" // Add padding at the bottom to improve spacing
           }}
         >
           {visibleMessages.map((message, index) => {
+            // When in search mode, use the direct index; otherwise, calculate the actual position in the full list
             const actualIndex = searchQuery ? index : visibleRange.start + index
             return (
               <VirtualMessageItem
