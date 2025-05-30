@@ -1,0 +1,1 @@
+- Can add AI support with user API key (Will have to implement indexing, db support for that)

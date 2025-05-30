@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Viewer</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <!-- Simple Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.5.5/css/simple-line-icons.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Container styles */
+        .app-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Header styles */
+        .header {
+            background: #075E54;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .file-button {
+            background: #F0F0F0;
+            color: #075E54;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .file-button:hover {
+            background: #E0E0E0;
+        }
+
+        /* Progress UI */
+        .progress-container {
+            display: none;
+            padding: 1rem;
+            background: #fff;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #25D366;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            padding: 0.5rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        /* Controls UI */
+        .controls {
+            padding: 1rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input, .date-input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: white;
+            color: #333;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .search-input:focus, .date-input:focus {
+            outline: none;
+            border-color: #075E54;
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        /* Button styles */
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: #075E54;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #064942;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        /* Statistics section */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: #f5f5f5;
+            padding: 0.75rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #075E54;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        /* Chat container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+            background: #e5ddd5;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: #e5ddd5;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #bbb;
+        }
+
+        .virtual-list {
+            position: relative;
+            padding: 1rem 0.75rem;
+        }
+
+        /* Message styles */
+        .message {
+            margin-bottom: 0.5rem;
+            display: flex;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.received {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 65%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 7px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-bubble {
+            background: #dcf8c6;
+            color: #000;
+            border-top-right-radius: 0;
+        }
+
+        .message.received .message-bubble {
+            background: white;
+            color: #000;
+            border-top-left-radius: 0;
+        }
+
+        .message-header {
+            font-size: 0.75rem;
+            color: #075E54;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .message-text {
+            line-height: 1.4;
+            white-space: pre-wrap;
+            font-size: 0.875rem;
+        }
+
+        .message-time {
+            font-size: 0.675rem;
+            color: #999;
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+
+        .message.received .message-time {
+            text-align: left;
+        }
+
+        /* Date separator */
+        .date-separator {
+            text-align: center;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .date-separator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .date-separator span {
+            background: #e5ddd5;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #555;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Loading and no results states */
+        .loading, .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #25D366;
+            border-radius: 50%;
+            margin: 0 auto 0.75rem;
+        }
+
+        /* Scroll to top button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .search-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input, .date-input {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .message-bubble {
+                max-width: 80%;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.25rem;
+            }
+            
+            .file-button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+            
+            .message-bubble {
+                max-width: 85%;
+                padding: 0.5rem 0.625rem;
+            }
+            
+            .date-separator span {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.675rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <div class="header">
+            <h1>WhatsApp Chat Viewer</h1>
+            <div class="file-input-wrapper">
+                <input type="file" class="file-input" id="fileInput" accept=".txt">
+                <label for="fileInput" class="file-button">
+                    <span class="icon-folder-alt"></span> Choose Chat File
+                </label>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+            <div class="progress-text" id="progressText">
+                Processing...
+            </div>
+        </div>
+
+        <div class="controls" id="controls">
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search messages...">
+                <input type="date" class="date-input" id="dateInput" title="Jump to date">
+                <button class="btn btn-primary" onclick="searchMessages()">
+                    <span class="icon-magnifier"></span> Search
+                </button>
+                <button class="btn btn-secondary" onclick="clearSearch()">
+                    <span class="icon-close"></span> Clear
+                </button>
+            </div>
+            
+            <div class="stats" id="stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalMessages">0</span>
+                    <span class="stat-label">Messages</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="dateRange">-</span>
+                    <span class="stat-label">Date Range</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="participants">0</span>
+                    <span class="stat-label">Participants</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="virtual-list" id="virtualList"></div>
+        </div>
+    </div>
+
+    <button class="scroll-to-top" id="scrollToTop" onclick="scrollToTop()">
+        <span class="icon-arrow-up"></span>
+    </button>
+
+    <script>
+        let messages = [];
+        let filteredMessages = [];
+        let currentUser = '';
+        let visibleRange = { start: 0, end: 100 };
+        const CHUNK_SIZE = 100;
+        let isSearching = false;
+
+        const container = document.querySelector('.app-container');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const controls = document.getElementById('controls');
+        const chatContainer = document.getElementById('chatContainer');
+        const virtualList = document.getElementById('virtualList');
+        const scrollToTopBtn = document.getElementById('scrollToTop');
+        const searchInput = document.getElementById('searchInput');
+        const dateInput = document.getElementById('dateInput');
+
+        fileInput.addEventListener('change', handleFile);
+        chatContainer.addEventListener('scroll', handleScroll);
+        searchInput.addEventListener('input', debounce(searchMessages, 300));
+        dateInput.addEventListener('change', jumpToDate);
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showProgress();
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                await parseMessages(content);
+            };
+            reader.readAsText(file);
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            controls.style.display = 'none';
+            chatContainer.style.display = 'none';
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+            controls.style.display = 'block';
+            chatContainer.style.display = 'block';
+        }
+
+        function updateProgress(percent, text) {
+            progressBar.style.width = percent + '%';
+            progressText.textContent = text;
+        }
+
+        async function parseMessages(content) {
+            messages = [];
+            const lines = content.split('\n');
+            const messageRegex = /^\[(\d{4}\/\d{1,2}\/\d{1,2}),\s+(\d{1,2}:\d{2}:\d{2}\s+[AP]M)\]\s+(.+?):\s+(.*)$/;
+            
+            let currentMessage = null;
+            const participants = new Set();
+            const batchSize = 5000;
+            
+            updateProgress(0, 'Parsing messages...');
+
+            for (let i = 0; i < lines.length; i++) {
+                if (i % batchSize === 0) {
+                    updateProgress((i / lines.length) * 90, `Processing ${i.toLocaleString()} / ${lines.length.toLocaleString()} lines...`);
+                    await new Promise(resolve => setTimeout(resolve, 1));
+                }
+
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const match = line.match(messageRegex);
+                
+                if (match) {
+                    if (currentMessage) {
+                        messages.push(currentMessage);
+                    }
+                    
+                    const [, date, time, sender, text] = match;
+                    participants.add(sender);
+                    
+                    currentMessage = {
+                        date: date,
+                        time: time,
+                        sender: sender,
+                        text: text,
+                        timestamp: new Date(`${date.replace(/\//g, '-')} ${time}`),
+                        id: messages.length
+                    };
+                } else if (currentMessage) {
+                    currentMessage.text += '\n' + line;
+                }
+            }
+            
+            if (currentMessage) {
+                messages.push(currentMessage);
+            }
+
+            updateProgress(95, 'Finalizing...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Determine current user (most frequent sender)
+            const senderCounts = {};
+            messages.forEach(msg => {
+                senderCounts[msg.sender] = (senderCounts[msg.sender] || 0) + 1;
+            });
+            currentUser = Object.keys(senderCounts).reduce((a, b) => 
+                senderCounts[a] > senderCounts[b] ? a : b
+            );
+
+            filteredMessages = [...messages];
+            updateStats(participants.size);
+            updateProgress(100, 'Complete!');
+            
+            setTimeout(() => {
+                hideProgress();
+                renderMessages();
+            }, 300);
+        }
+
+        function updateStats(participantCount) {
+            document.getElementById('totalMessages').textContent = messages.length.toLocaleString();
+            document.getElementById('participants').textContent = participantCount;
+            
+            if (messages.length > 0) {
+                const firstDate = messages[0].date;
+                const lastDate = messages[messages.length - 1].date;
+                
+                document.getElementById('dateRange').textContent = `${formatDateShort(firstDate)} → ${formatDateShort(lastDate)}`;
+                
+                // Add extra stats dynamically
+                addExtraStats();
+            }
+        }
+        
+        function formatDateShort(dateStr) {
+            const date = new Date(dateStr.replace(/\//g, '-'));
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric'
+            });
+        }
+        
+        function addExtraStats() {
+            // Only add these stats if they don't already exist
+            if (document.getElementById('avgMessagesPerDay')) return;
+            
+            const statsContainer = document.getElementById('stats');
+            
+            // Calculate messages per day
+            const firstDate = new Date(messages[0].date.replace(/\//g, '-'));
+            const lastDate = new Date(messages[messages.length - 1].date.replace(/\//g, '-'));
+            const durationDays = Math.max(1, Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24)));
+            const avgMsgsPerDay = Math.round(messages.length / durationDays);
+            
+            // Create avg messages per day stat
+            const avgMsgsPerDayEl = document.createElement('div');
+            avgMsgsPerDayEl.className = 'stat-item';
+            avgMsgsPerDayEl.innerHTML = `
+                <span class="stat-value" id="avgMessagesPerDay">${avgMsgsPerDay}</span>
+                <span class="stat-label">Msgs/Day</span>
+            `;
+            statsContainer.appendChild(avgMsgsPerDayEl);
+        }
+
+        function renderMessages() {
+            virtualList.innerHTML = '';
+            visibleRange = { start: 0, end: Math.min(CHUNK_SIZE, filteredMessages.length) };
+            
+            const container = document.createElement('div');
+            container.style.height = `${filteredMessages.length * 60}px`;
+            container.style.position = 'relative';
+            
+            renderVisibleMessages();
+            virtualList.appendChild(container);
+        }
+
+        function renderVisibleMessages() {
+            const container = virtualList.firstChild;
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            let currentDate = '';
+            
+            for (let i = visibleRange.start; i < visibleRange.end; i++) {
+                const message = filteredMessages[i];
+                if (!message) continue;
+
+                // Add date separator with nicer styling
+                if (message.date !== currentDate) {
+                    const dateSep = document.createElement('div');
+                    dateSep.className = 'date-separator';
+                    
+                    const formattedDate = formatDate(message.date);
+                    const dateSpan = document.createElement('span');
+                    dateSpan.textContent = formattedDate;
+                    
+                    dateSep.appendChild(dateSpan);
+                    dateSep.style.position = 'absolute';
+                    dateSep.style.top = `${i * 60}px`;
+                    dateSep.style.width = '100%';
+                    
+                    container.appendChild(dateSep);
+                    currentDate = message.date;
+                }
+
+                const messageElement = createMessageElement(message, i);
+                container.appendChild(messageElement);
+            }
+            
+            // If no messages are found, show a "no results" message
+            if (filteredMessages.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.innerHTML = 'No messages found. Try a different search term.';
+                container.appendChild(noResults);
+            }
+        }
+
+        function createMessageElement(message, index) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender === currentUser ? 'sent' : 'received'}`;
+            messageDiv.style.position = 'absolute';
+            messageDiv.style.top = `${index * 60 + 30}px`;
+            messageDiv.style.width = '100%';
+            messageDiv.style.paddingLeft = '20px';
+            messageDiv.style.paddingRight = '20px';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            if (message.sender !== currentUser) {
+                const header = document.createElement('div');
+                header.className = 'message-header';
+                header.textContent = message.sender;
+                bubble.appendChild(header);
+            }
+            
+            const text = document.createElement('div');
+            text.className = 'message-text';
+            
+            // Convert URLs to clickable links
+            const linkifiedText = message.text.replace(
+                /(https?:\/\/[^\s]+)/g, 
+                '<a href="$1" target="_blank" style="color: inherit; text-decoration: underline;">$1</a>'
+            );
+            
+            text.innerHTML = linkifiedText;
+            bubble.appendChild(text);
+            
+            const time = document.createElement('div');
+            time.className = 'message-time';
+            time.textContent = message.time;
+            bubble.appendChild(time);
+            
+            messageDiv.appendChild(bubble);
+            return messageDiv;
+        }
+
+        function handleScroll() {
+            const scrollTop = chatContainer.scrollTop;
+            const containerHeight = chatContainer.clientHeight;
+            
+            scrollToTopBtn.classList.toggle('visible', scrollTop > 500);
+            
+            if (isSearching) return;
+            
+            const newStart = Math.floor(scrollTop / 60);
+            const newEnd = Math.min(newStart + Math.ceil(containerHeight / 60) + 20, filteredMessages.length);
+            
+            if (newStart !== visibleRange.start || newEnd !== visibleRange.end) {
+                visibleRange = { start: Math.max(0, newStart - 10), end: newEnd };
+                renderVisibleMessages();
+            }
+        }
+
+        function searchMessages() {
+            const query = searchInput.value.toLowerCase().trim();
+            
+            if (!query) {
+                filteredMessages = [...messages];
+                isSearching = false;
+            } else {
+                filteredMessages = messages.filter(msg => 
+                    msg.text.toLowerCase().includes(query) || 
+                    msg.sender.toLowerCase().includes(query)
+                );
+                isSearching = true;
+            }
+            
+            renderMessages();
+            chatContainer.scrollTop = 0;
+            
+            if (query && filteredMessages.length === 0) {
+                virtualList.innerHTML = `
+                    <div class="no-results">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fas fa-search-minus text-5xl text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">No messages found</p>
+                            <p class="text-sm text-gray-500 mt-2">Try a different search term</p>
+                            <button onclick="clearSearch()" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200 flex items-center gap-2">
+                                <i class="fas fa-times"></i> Clear Search
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (query) {
+                // Show how many results were found
+                const resultsInfo = document.createElement('div');
+                resultsInfo.className = 'text-center text-sm text-gray-500 py-2 bg-gray-100 rounded-md mb-4';
+                resultsInfo.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Found <b>${filteredMessages.length}</b> message${filteredMessages.length !== 1 ? 's' : ''} matching "<b>${query}</b>"
+                `;
+                virtualList.prepend(resultsInfo);
+            }
+        }
+
+        function clearSearch() {
+            // Add animation to the search clearing
+            searchInput.value = '';
+            dateInput.value = '';
+            
+            // Visual feedback that search is cleared
+            searchInput.classList.add('bg-green-50');
+            setTimeout(() => {
+                searchInput.classList.remove('bg-green-50');
+            }, 300);
+            
+            filteredMessages = [...messages];
+            isSearching = false;
+            renderMessages();
+            chatContainer.scrollTop = 0;
+            
+            // Show toast notification
+            showToast('Search cleared');
+        }
+        
+        function showToast(message) {
+            // Create a toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg';
+            toast.style.zIndex = '9999';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            toast.style.transform = 'translate(-50%, 20px)';
+            
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 10);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 2000);
+        }
+
+        function jumpToDate() {
+            const selectedDate = dateInput.value;
+            if (!selectedDate) return;
+            
+            const targetDate = selectedDate.split('-').reverse().join('/');
+            const messageIndex = messages.findIndex(msg => msg.date === targetDate);
+            
+            if (messageIndex !== -1) {
+                filteredMessages = [...messages];
+                isSearching = false;
+                renderMessages();
+                
+                // Scroll to the date with animation
+                chatContainer.scrollTo({
+                    top: messageIndex * 60,
+                    behavior: 'smooth'
+                });
+                
+                // Highlight the date separator for better visibility
+                setTimeout(() => {
+                    const dateSeparators = document.querySelectorAll('.date-separator');
+                    dateSeparators.forEach(sep => {
+                        if (sep.textContent.includes(formatDate(targetDate))) {
+                            sep.querySelector('span').style.animation = 'pulse 1s ease 3';
+                            sep.querySelector('span').style.backgroundColor = '#ffffff';
+                            sep.querySelector('span').style.boxShadow = '0 0 15px rgba(37, 211, 102, 0.5)';
+                            
+                            setTimeout(() => {
+                                sep.querySelector('span').style.backgroundColor = '';
+                                sep.querySelector('span').style.boxShadow = '';
+                            }, 3000);
+                        }
+                    });
+                }, 500);
+                
+                // Show confirmation
+                showToast(`Jumped to ${formatDate(targetDate)}`);
+            } else {
+                // Show error when date not found
+                showToast('No messages found on this date', 'error');
+            }
+        }
+        
+        // Enhanced toast function that can show errors too
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg';
+            toast.style.zIndex = '9999';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            toast.style.transform = 'translate(-50%, 20px)';
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = '#323232';
+                toast.style.color = 'white';
+                toast.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+            } else {
+                toast.style.backgroundColor = '#323232';
+                toast.style.color = 'white';
+                toast.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 10);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 2000);
+        }
+
+        function scrollToTop() {
+            chatContainer.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr.replace(/\//g, '-'));
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // Check if date is today or yesterday
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            }
+            
+            // Otherwise format the date nicely
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>
