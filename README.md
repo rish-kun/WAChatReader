@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📱 WhatsApp Chat Viewer
 
-## Getting Started
+**WhatsApp Chat Viewer** is a sleek and dynamic web application that allows users to **upload and view exported WhatsApp chat backups** in a clean, modern UI. Designed for easy navigation and a smooth user experience, it helps users explore long conversations with **date-based filtering**, **animated transitions**, and a responsive layout.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🔍 Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 📁 Upload `.txt` files exported from WhatsApp (without media)
+- 📅 Navigate messages by **date**
+- 💬 Beautifully formatted and animated **chat bubbles**
+- 🔍 Smooth scrolling and filtering for long conversations
+- 💡 Responsive and modern UI with subtle animations
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚙️ How It Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Export a WhatsApp chat (without media) from your phone as a `.txt` file.
+2. Upload the file using the drag-and-drop or file input component.
+3. The app parses each message into:
+   - 🕒 Date & Time
+   - 👤 Sender
+   - 📝 Message content
+4. Messages are grouped by date and displayed as chat bubbles.
+5. Use the date navigation bar to jump to any day in the conversation.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: [Next.js (TypeScript)](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Parsing**: Custom JavaScript logic to handle WhatsApp text formats
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📂 Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
