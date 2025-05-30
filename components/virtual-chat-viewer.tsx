@@ -13,9 +13,11 @@ interface VirtualChatViewerProps {
   searchQuery?: string
 }
 
-const CHUNK_SIZE = 100
-// Using a variable message height that can adjust based on content
-// Using a larger height to prevent message overlapping
+// Increase chunk size for better handling of large message volumes
+const CHUNK_SIZE = 30
+// Buffer size for loading messages above and below viewport
+const BUFFER_SIZE = 15
+// Using a fixed height to prevent message overlapping
 const MESSAGE_HEIGHT = 120
 
 export function VirtualChatViewer({ messages, currentUser, searchQuery = "" }: VirtualChatViewerProps) {
